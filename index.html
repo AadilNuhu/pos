@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Point of Sale (POS)</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Stock</h1>
+        <form id="stock-form">
+            <input type="text" id="stock-name" placeholder="Stock Name" required>
+            <input type="number" id="stock-amount" placeholder="Quantity" required>
+            <input type="number" id="stock-price" placeholder="Stock Price" required step="0.10">
+            <button type="submit">Add Stock</button>
+        </form>
+        <h2>Total Stocks Available : <span id="total-stocks">0</span></h2>
+        <button id="view-stocks-btn">View Stocks</button>
+<!-- 
+        <h1>Sell Item</h1>
+        <input type="text" id="sold-stock-name" required>
+        <input type="number" id="sold-stock-amount"  required>
+        <input type="number" id="sold-stock-price"  required step="0.10">
+        <button type="submit">Sell Item</button>
+    </form>
+        
+    <h3>Sold Items</h3>
+        <ul id="sold-items-list"></ul>
+    <form id="sell-form">
+        <h2>Total Sales: <span id="total-sales">₵0.00</span></h2> -->
+
+        <h1>Sell Item</h1>
+        <form id="salesForm">
+            <input type="text" id="stockName" placeholder="Stock Name" required><br><br>
+
+            <input type="number" id="quantity" placeholder="Quantity Sold" required><br><br>
+
+            <input type="number" id="price" placeholder="Price" required step="0.10"><br><br>
+
+            <button type="submit">Sell Item</button>
+        </form>
+
+    <h2>Sales List</h2>
+    <ul id="salesList">
+        <!-- Sales entries will go here -->
+    </ul>
+
+    <h3>Total Sales: ₵<span id="totalSales">0.00</span></h3>
+
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
