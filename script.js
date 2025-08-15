@@ -75,8 +75,9 @@ class SalesManager {
     }
 
     addSale(sale) {
-        if (!sale.stockName || !sale.quantity || !sale.price) {
-            throw new Error("All sale fields are required");
+        // Require date in sale
+        if (!sale.stockName || !sale.quantity || !sale.price || !sale.date) {
+            throw new Error("All sale fields are required (name, quantity, price, date)");
         }
 
         this.sales.push(sale);
@@ -261,6 +262,7 @@ class UIController {
                 const stockName = document.getElementById('stockName').value.trim();
                 const quantity = parseInt(document.getElementById('quantity').value);
                 const price = parseFloat(document.getElementById('price').value);
+                const saleDate = document.getElementById('sale-date').value; // NEW
 
                 if (!stockName || isNaN(quantity) || quantity <= 0) {
                     throw new Error("Please enter valid stock name and quantity");
@@ -270,8 +272,12 @@ class UIController {
                     throw new Error("Please enter a valid price");
                 }
 
-                this.salesManager.addSale({ stockName, quantity, price });
-                this.addSaleToList(stockName, quantity, price);
+                if (!saleDate) {
+                    throw new Error("Please select a date for the sale");
+                }
+
+                this.salesManager.addSale({ stockName, quantity, price, date: saleDate });
+                this.addSaleToList(stockName, quantity, price, saleDate); // pass date
                 salesForm.reset();
             } catch (error) {
                 alert(error.message);
@@ -284,11 +290,11 @@ class UIController {
         if (!salesList) return;
 
         this.salesManager.sales.forEach(sale => {
-            this.addSaleToList(sale.stockName, sale.quantity, sale.price);
+            this.addSaleToList(sale.stockName, sale.quantity, sale.price, sale.date); // include date
         });
     }
 
-    static addSaleToList(stockName, quantity, price) {
+    static addSaleToList(stockName, quantity, price, date) {
         const salesList = document.getElementById('salesList');
         const totalSalesSpan = document.getElementById('totalSales');
         if (!salesList || !totalSalesSpan) return;
@@ -297,7 +303,7 @@ class UIController {
         const newListItem = document.createElement('li');
         
         newListItem.innerHTML = `
-            ${stockName}: Quantity ${quantity}, Price cedis ${price.toFixed(2)}, Total cedis ${total.toFixed(2)}
+            ${stockName}: Quantity ${quantity}, Price cedis ${price.toFixed(2)}, Date ${date}, Total cedis ${total.toFixed(2)}
             <button class="deleteBtn">Delete</button>
         `;
         
@@ -305,11 +311,11 @@ class UIController {
         totalSalesSpan.textContent = this.salesManager.totalSales.toFixed(2);
 
         newListItem.querySelector('.deleteBtn').addEventListener('click', () => {
-            this.deleteSale(stockName, quantity, price, newListItem);
+            this.deleteSale(stockName, quantity, price, date, newListItem); // include date when deleting
         });
     }
 
-    static deleteSale(stockName, quantity, price, listItem) {
+    static deleteSale(stockName, quantity, price, date, listItem) {
         const salesList = document.getElementById('salesList');
         const totalSalesSpan = document.getElementById('totalSales');
         if (!salesList || !totalSalesSpan) return;
@@ -317,7 +323,8 @@ class UIController {
         const index = this.salesManager.sales.findIndex(sale => 
             sale.stockName === stockName && 
             sale.quantity === quantity && 
-            sale.price === price
+            sale.price === price &&
+            sale.date === date // match date as well
         );
 
         if (index !== -1) {
