@@ -1,219 +1,407 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const stockForm = document.getElementById('stock-form');
-    const totalStocksDisplay = document.getElementById('total-stocks');
-    const viewStocksBtn = document.getElementById('view-stocks-btn');
-
-    // Initialize stocks from localStorage or as an empty array
-    let stocks = JSON.parse(localStorage.getItem('stocks')) || [];
-    let totalStocks = stocks.reduce((sum, stock) => sum + stock.amount, 0);
-
-    // Display total stocks on load (only if on index.html)
-    if (totalStocksDisplay) {
-        totalStocksDisplay.textContent = totalStocks;
+// Stock Management System
+class StockManager {
+    constructor() {
+        this.stocks = JSON.parse(localStorage.getItem('stocks')) || [];
+        this.sortStocksByDate(); // Sort by date by default
+        this.totalStocks = this.calculateTotalStocks();
+        this.totalStockValue = this.calculateTotalStockValue();
     }
 
-    // Handle stock submission (only if on index.html)
-    if (stockForm) {
+    sortStocksByDate() {
+        this.stocks.sort((a, b) => new Date(a.date) - new Date(b.date));
+    }
+
+    calculateTotalStocks() {
+        return this.stocks.reduce((sum, stock) => sum + (stock.amount || 0), 0);
+    }
+
+    calculateTotalStockValue() {
+        return this.stocks.reduce((sum, stock) => sum + ((stock.amount || 0) * (stock.price || 0)), 0);
+    }
+
+    addStock(stock) {
+        if (!stock.name || !stock.amount || !stock.price || !stock.date) {
+            throw new Error("All stock fields are required");
+        }
+
+        this.stocks.push(stock);
+        this.sortStocksByDate(); // Re-sort after adding
+        this.totalStocks += stock.amount;
+        this.totalStockValue += stock.amount * stock.price;
+        this.saveToLocalStorage();
+    }
+
+    updateStock(index, updatedStock) {
+        if (index < 0 || index >= this.stocks.length) {
+            throw new Error("Invalid stock index");
+        }
+
+        const oldStock = this.stocks[index];
+        this.totalStocks = this.totalStocks - oldStock.amount + updatedStock.amount;
+        this.totalStockValue = this.totalStockValue - (oldStock.amount * oldStock.price) + (updatedStock.amount * updatedStock.price);
+
+        this.stocks[index] = updatedStock;
+        this.sortStocksByDate(); // Re-sort after updating
+        this.saveToLocalStorage();
+    }
+
+    deleteStock(index) {
+        if (index < 0 || index >= this.stocks.length) {
+            throw new Error("Invalid stock index");
+        }
+
+        const deletedStock = this.stocks[index];
+        this.totalStocks -= deletedStock.amount;
+        this.totalStockValue -= deletedStock.amount * deletedStock.price;
+
+        this.stocks.splice(index, 1);
+        this.saveToLocalStorage();
+    }
+
+    saveToLocalStorage() {
+        localStorage.setItem('stocks', JSON.stringify(this.stocks));
+    }
+}
+
+// Sales Management System
+class SalesManager {
+    constructor() {
+        this.sales = JSON.parse(localStorage.getItem('sales')) || [];
+        this.totalSales = this.calculateTotalSales();
+    }
+
+    calculateTotalSales() {
+        return this.sales.reduce((sum, sale) => sum + ((sale.quantity || 0) * (sale.price || 0)), 0);
+    }
+
+    addSale(sale) {
+        if (!sale.stockName || !sale.quantity || !sale.price) {
+            throw new Error("All sale fields are required");
+        }
+
+        this.sales.push(sale);
+        this.totalSales += sale.quantity * sale.price;
+        this.saveToLocalStorage();
+    }
+
+    deleteSale(index) {
+        if (index < 0 || index >= this.sales.length) {
+            throw new Error("Invalid sale index");
+        }
+
+        const deletedSale = this.sales[index];
+        this.totalSales -= deletedSale.quantity * deletedSale.price;
+
+        this.sales.splice(index, 1);
+        this.saveToLocalStorage();
+    }
+
+    saveToLocalStorage() {
+        localStorage.setItem('sales', JSON.stringify(this.sales));
+    }
+}
+
+// UI Controller
+class UIController {
+    static init() {
+        this.stockManager = new StockManager();
+        this.salesManager = new SalesManager();
+        
+        this.initStockForm();
+        this.initViewStocksButton();
+        this.renderStockList();
+        this.initSalesForm();
+        this.loadSales();
+        this.initPrintButton();
+        this.initBackButton();
+    }
+
+    static initStockForm() {
+        const stockForm = document.getElementById('stock-form');
+        if (!stockForm) return;
+
+        this.updateStockDisplays();
+
         stockForm.addEventListener('submit', (event) => {
             event.preventDefault();
 
-            const stockName = document.getElementById('stock-name').value;
-            const stockAmount = parseInt(document.getElementById('stock-amount').value);
-            const stockPrice = parseFloat(document.getElementById('stock-price').value);
+            try {
+                const stockName = document.getElementById('stock-name').value.trim();
+                const stockAmount = parseInt(document.getElementById('stock-amount').value);
+                const stockPrice = parseFloat(document.getElementById('stock-price').value);
+                const stockDate = document.getElementById('stock-date').value;
 
-            // Ensure all fields are valid before adding
-            if (stockName && stockAmount > 0 && !isNaN(stockPrice)) {
-                // Add new stock to the array
-                stocks.push({ name: stockName, amount: stockAmount, price: stockPrice });
-                totalStocks += stockAmount;
-
-                // Update localStorage
-                localStorage.setItem('stocks', JSON.stringify(stocks));
-
-                // Update total stocks display
-                if (totalStocksDisplay) {
-                    totalStocksDisplay.textContent = totalStocks;
+                if (!stockName || isNaN(stockAmount)) {
+                    throw new Error("Please enter a valid stock name and amount");
                 }
+
+                if (isNaN(stockPrice) || stockPrice <= 0) {
+                    throw new Error("Please enter a valid price");
+                }
+
+                if (!stockDate) {
+                    throw new Error("Please select a date");
+                }
+
+                this.stockManager.addStock({
+                    name: stockName,
+                    amount: stockAmount,
+                    price: stockPrice,
+                    date: stockDate
+                });
+
+                this.updateStockDisplays();
                 stockForm.reset();
-            } else {
-                alert("Please fill in all fields correctly.");
+            } catch (error) {
+                alert(error.message);
             }
         });
     }
 
-    // View stocks button functionality (only if on index.html)
-    if (viewStocksBtn) {
-        viewStocksBtn.addEventListener('click', () => {
-            window.location.href = 'stocks.html';
+    static updateStockDisplays() {
+        const totalStocksDisplay = document.getElementById('total-stocks');
+        const totalPriceDisplay = document.getElementById('total-price');
+
+        if (totalStocksDisplay) {
+            totalStocksDisplay.textContent = this.stockManager.totalStocks;
+        }
+        if (totalPriceDisplay) {
+            totalPriceDisplay.textContent = this.stockManager.totalStockValue.toFixed(2);
+        }
+    }
+
+    static initViewStocksButton() {
+        const viewStocksBtn = document.getElementById('view-stocks-btn');
+        if (viewStocksBtn) {
+            viewStocksBtn.addEventListener('click', () => {
+                window.location.href = 'stocks.html';
+            });
+        }
+    }
+
+    static renderStockList() {
+        const stockList = document.getElementById('stock-list');
+        if (!stockList) return;
+
+        stockList.innerHTML = '';
+        this.stockManager.stocks.forEach((stock, index) => {
+            const stockListItem = document.createElement('li');
+            const itemTotal = (stock.price * stock.amount) || 0;
+            
+            stockListItem.innerHTML = `
+                <div class="stock-info">
+                    <span class="stock-name">${stock.name}</span>
+                    <span class="stock-details">
+                        Quantity: ${stock.amount} | 
+                        Price: cedis ${stock.price.toFixed(2)} | 
+                        Date: ${stock.date} | 
+                        Total: cedis ${itemTotal.toFixed(2)}
+                    </span>
+                </div>
+                <div class="stock-actions">
+                    <button class="action-button update-button">Update</button>
+                    <button class="action-button delete-button">Delete</button>
+                </div>
+            `;
+
+            stockListItem.querySelector('.update-button').addEventListener('click', () => this.handleUpdateStock(index));
+            stockListItem.querySelector('.delete-button').addEventListener('click', () => this.handleDeleteStock(index));
+            
+            stockList.appendChild(stockListItem);
         });
     }
 
-    // Stock listing on stocks.html (only if on stocks.html)
-    if (document.getElementById('stock-list')) {
-        const stockList = document.getElementById('stock-list');
+    static handleUpdateStock(index) {
+        const stock = this.stockManager.stocks[index];
+        
+        const newAmount = prompt("Enter new amount:", stock.amount);
+        const newPrice = prompt("Enter new price:", stock.price);
+        const newDate = prompt("Enter new date (YYYY-MM-DD):", stock.date);
 
-        function renderStocks() {
-            stockList.innerHTML = '';
-            stocks.forEach((stock, index) => {
-                if (stock && stock.name && stock.amount !== undefined && stock.price !== undefined) {
-                    const stockListItem = document.createElement('li');
-                    stockListItem.textContent = `${stock.name}: ${stock.amount} (Price: ₵${stock.price ? stock.price.toFixed(2) : 'N/A'})`;
-
-                    const updateButton = document.createElement('button');
-                    updateButton.textContent = 'Update';
-                    updateButton.className = 'action-button update-button'; // Add classes
-                    updateButton.onclick = () => updateStock(index);
-
-                    const deleteButton = document.createElement('button');
-                    deleteButton.textContent = 'Delete';
-                    deleteButton.className = 'action-button delete-button'; // Add classes
-                    deleteButton.onclick = () => deleteStock(index);
-
-                    stockListItem.appendChild(updateButton);
-                    stockListItem.appendChild(deleteButton);
-                    stockList.appendChild(stockListItem);
-                }
-            });
-        }
-
-        renderStocks();
-
-        function updateStock(index) {
-            const newAmount = prompt("Enter new amount for " + stocks[index].name, stocks[index].amount);
-            const newPrice = prompt("Enter new price for " + stocks[index].name, stocks[index].price);
-
-            if (newAmount !== null && !isNaN(newAmount) && newPrice !== null && !isNaN(newPrice)) {
+        if (newAmount !== null && newPrice !== null && newDate !== null) {
+            try {
                 const amount = parseInt(newAmount);
                 const price = parseFloat(newPrice);
+                
+                if (isNaN(amount) || amount <= 0) throw new Error("Invalid amount");
+                if (isNaN(price) || price <= 0) throw new Error("Invalid price");
+                if (!newDate) throw new Error("Date is required");
 
-                totalStocks = totalStocks - stocks[index].amount + amount; // Update total stocks
-                stocks[index].amount = amount; // Update the amount
-                stocks[index].price = price; // Update the price
-                localStorage.setItem('stocks', JSON.stringify(stocks)); // Save updated stocks
+                this.stockManager.updateStock(index, {
+                    name: stock.name,
+                    amount: amount,
+                    price: price,
+                    date: newDate
+                });
 
-                // Update total stocks display only if on index.html
-                if (totalStocksDisplay) {
-                    totalStocksDisplay.textContent = totalStocks; // Update display
+                this.renderStockList();
+                this.updateStockDisplays();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+    }
+
+    static handleDeleteStock(index) {
+        if (confirm("Are you sure you want to delete this stock?")) {
+            this.stockManager.deleteStock(index);
+            this.renderStockList();
+            this.updateStockDisplays();
+        }
+    }
+
+    static initSalesForm() {
+        const salesForm = document.getElementById('salesForm');
+        if (!salesForm) return;
+
+        salesForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            try {
+                const stockName = document.getElementById('stockName').value.trim();
+                const quantity = parseInt(document.getElementById('quantity').value);
+                const price = parseFloat(document.getElementById('price').value);
+
+                if (!stockName || isNaN(quantity) || quantity <= 0) {
+                    throw new Error("Please enter valid stock name and quantity");
                 }
-                renderStocks(); // Re-render stock list
+
+                if (isNaN(price) || price <= 0) {
+                    throw new Error("Please enter a valid price");
+                }
+
+                this.salesManager.addSale({ stockName, quantity, price });
+                this.addSaleToList(stockName, quantity, price);
+                salesForm.reset();
+            } catch (error) {
+                alert(error.message);
             }
-        }
-
-        function deleteStock(index) {
-            totalStocks -= stocks[index].amount; // Update total stocks
-            stocks.splice(index, 1); // Remove the stock from the array
-            localStorage.setItem('stocks', JSON.stringify(stocks)); // Save updated stocks
-
-            // Update total stocks display only if on index.html
-            if (totalStocksDisplay) {
-                totalStocksDisplay.textContent = totalStocks; // Update display
-            }
-            renderStocks(); // Re-render stock list
-        }
-    }
-
-    // Print stocks functionality (only if on stocks.html)
-    if (document.getElementById('print-btn')) {
-        document.getElementById('print-btn').addEventListener('click', () => {
-            // Create a printable content
-            let printContent = '<h1>Stock List</h1><ul>';
-            stocks.forEach(stock => {
-                printContent += `<li>${stock.name}: ${stock.amount} (Price: ₵${stock.price ? stock.price.toFixed(2) : 'N/A'})</li>`;
-            });
-            printContent += `</ul><h2>Total Stocks: ${totalStocks}</h2>`;
-
-            // Open a new window for printing
-            const printWindow = window.open('', '', 'height=600,width=800');
-            printWindow.document.write('<html><head><title>Print Stocks</title>');
-            printWindow.document.write('<style>body { font-family: Arial; }</style>');
-            printWindow.document.write('</head><body>');
-            printWindow.document.write(printContent);
-            printWindow.document.write('</body></html>');
-            printWindow.document.close();
-            printWindow.print();
         });
     }
 
-    // Back button functionality (only if on stocks.html)
-    if (document.getElementById('back-btn')) {
-        document.getElementById('back-btn').addEventListener('click', () => {
-            window.location.href = 'index.html';
+    static loadSales() {
+        const salesList = document.getElementById('salesList');
+        if (!salesList) return;
+
+        this.salesManager.sales.forEach(sale => {
+            this.addSaleToList(sale.stockName, sale.quantity, sale.price);
         });
     }
-});
 
+    static addSaleToList(stockName, quantity, price) {
+        const salesList = document.getElementById('salesList');
+        const totalSalesSpan = document.getElementById('totalSales');
+        if (!salesList || !totalSalesSpan) return;
 
-
-document.addEventListener('DOMContentLoaded', () => {
-    const salesForm = document.getElementById('salesForm');
-    const salesList = document.getElementById('salesList');
-    const totalSalesSpan = document.getElementById('totalSales');
-    
-    let totalSales = 0;
-
-    // Load existing sales from localStorage
-    const loadSales = () => {
-        const sales = JSON.parse(localStorage.getItem('sales')) || [];
-        sales.forEach(item => {
-            addSaleToList(item.stockName, item.quantity, item.price);
-        });
-    };
-
-    // Add sale to the list and update total sales
-    const addSaleToList = (stockName, quantity, price) => {
         const total = quantity * price;
-        totalSales += total;
-
-        // Create a new list item
         const newListItem = document.createElement('li');
-        newListItem.innerHTML = `${stockName}: Quantity ${quantity}, Price ₵${price.toFixed(2)}, Total ₵${total.toFixed(2)} 
-            <button class="deleteBtn">Delete</button>`;
+        
+        newListItem.innerHTML = `
+            ${stockName}: Quantity ${quantity}, Price cedis ${price.toFixed(2)}, Total cedis ${total.toFixed(2)}
+            <button class="deleteBtn">Delete</button>
+        `;
+        
         salesList.appendChild(newListItem);
+        totalSalesSpan.textContent = this.salesManager.totalSales.toFixed(2);
 
-        // Update the total sales displayed
-        totalSalesSpan.textContent = totalSales.toFixed(2);
-
-        // Add delete functionality
         newListItem.querySelector('.deleteBtn').addEventListener('click', () => {
-            deleteSale(stockName, quantity, price, newListItem);
+            this.deleteSale(stockName, quantity, price, newListItem);
         });
+    }
+
+    static deleteSale(stockName, quantity, price, listItem) {
+        const salesList = document.getElementById('salesList');
+        const totalSalesSpan = document.getElementById('totalSales');
+        if (!salesList || !totalSalesSpan) return;
+
+        const index = this.salesManager.sales.findIndex(sale => 
+            sale.stockName === stockName && 
+            sale.quantity === quantity && 
+            sale.price === price
+        );
+
+        if (index !== -1) {
+            this.salesManager.deleteSale(index);
+            salesList.removeChild(listItem);
+            totalSalesSpan.textContent = this.salesManager.totalSales.toFixed(2);
+        }
+    }
+
+    static initPrintButton() {
+        const printBtn = document.getElementById('print-btn');
+        if (!printBtn) return;
+
+        printBtn.addEventListener('click', () => {
+            // Generate PDF content
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text('Stock Report', 105, 15, { align: 'center' });
+            
+            // Add date
+            doc.setFontSize(10);
+            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 22, { align: 'center' });
+            
+            // Add table headers
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('Name', 15, 35);
+            doc.text('Quantity', 60, 35);
+            doc.text('Price (cedis)', 90, 35);
+            doc.text('Date', 125, 35);
+            doc.text('Total (cedis)', 160, 35);
+            
+            // Add stock items
+            doc.setFont(undefined, 'normal');
+            let y = 45;
+            this.stockManager.stocks.forEach(stock => {
+                const itemTotal = (stock.price * stock.amount) || 0;
+                
+                doc.text(stock.name, 15, y);
+                doc.text(stock.amount.toString(), 60, y);
+                doc.text(`cedis ${stock.price.toFixed(2)}`, 90, y);
+                doc.text(stock.date, 125, y);
+                doc.text(`cedis ${itemTotal.toFixed(2)}`, 160, y);
+                
+                y += 10;
+                
+                // Add new page if we're running out of space
+                if (y > 280) {
+                    doc.addPage();
+                    y = 20;
+                }
+            });
+            
+            // Add totals
+            doc.setFont(undefined, 'bold');
+            y += 15;
+            doc.text(`Total Stocks: ${this.stockManager.totalStocks}`, 15, y);
+            doc.text(`Total Value: cedis ${this.stockManager.totalStockValue.toFixed(2)}`, 120, y);
+            
+            // Save the PDF
+            doc.save(`Stock_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+        });
+    }
+
+    static initBackButton() {
+        const backBtn = document.getElementById('back-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                window.location.href = 'index.html';
+            });
+        }
+    }
+}
+
+// Initialize the application when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Load jsPDF library dynamically
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    script.onload = () => {
+        UIController.init();
     };
-
-    const deleteSale = (stockName, quantity, price, listItem) => {
-        const total = quantity * price;
-        totalSales -= total;
-
-        // Remove from the displayed list
-        salesList.removeChild(listItem);
-
-        // Update the total sales displayed
-        totalSalesSpan.textContent = totalSales.toFixed(2);
-
-        // Update localStorage
-        let sales = JSON.parse(localStorage.getItem('sales')) || [];
-        sales = sales.filter(item => !(item.stockName === stockName && item.quantity === quantity && item.price === price));
-        localStorage.setItem('sales', JSON.stringify(sales));
-    };
-
-    salesForm.addEventListener('submit', function (event) {
-        event.preventDefault();
-
-        const stockName = document.getElementById('stockName').value;
-        const quantity = parseInt(document.getElementById('quantity').value);
-        const price = parseFloat(document.getElementById('price').value);
-
-        // Add to localStorage
-        const sales = JSON.parse(localStorage.getItem('sales')) || [];
-        sales.push({ stockName, quantity, price });
-        localStorage.setItem('sales', JSON.stringify(sales));
-
-        // Add to the list and update total sales
-        addSaleToList(stockName, quantity, price);
-
-        // Clear the form
-        salesForm.reset();
-    });
-
-    // Load sales on page load
-    loadSales();
+    document.head.appendChild(script);
 });

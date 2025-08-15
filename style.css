@@ -1,101 +1,199 @@
+/* Refreshed UI using existing colors (#007bff, #28a745, #ff6b6b, #f4f4f9) */
+
+:root{
+    --blue: #007bff;
+    --blue-dark: #0056b3;
+    --green: #28a745;
+    --green-dark: #218838;
+    --red: #ff6b6b;
+    --bg: #f4f4f9;
+    --card: #ffffff;
+    --muted: #6c757d;
+}
+
+*{box-sizing:border-box}
+
 body {
-    font-family: 'Roboto', sans-serif; /* Use Roboto font */
-    background-color: #f4f4f9;
+    font-family: 'Roboto', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: linear-gradient(180deg, var(--bg) 0%, #eef1f8 100%);
     margin: 0;
-    padding: 20px;
+    padding: 28px;
+    color: #222;
+    -webkit-font-smoothing:antialiased;
 }
 
 .container {
-    max-width: 900px;
-    margin: auto;
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    max-width: 980px;
+    margin: 0 auto;
+    background: var(--card);
+    padding: 26px;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(20,30,60,0.06);
+    border: 1px solid rgba(0,0,0,0.03);
 }
 
+/* Header */
+.header-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom: 18px;
+}
 h1 {
-    text-align: center;
-    color: #333;
+    margin: 20px 0;
+    font-size: 1.6rem;
+    color: #0f1724;
+    letter-spacing: -0.3px;
+}
+.controls {
+    display:flex;
+    gap:8px;
+    align-items:center;
 }
 
-form {
-    margin-bottom: 20px;
+/* Forms */
+.form-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:12px;
+    align-items:start;
+    margin-bottom:16px;
+}
+#stock-form, #sell-form, #salesForm {
+    grid-column: 1 / -1;
+    background: linear-gradient(180deg, rgba(231,243,255,0.9), rgba(240,247,255,0.7));
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(0,123,255,0.08);
 }
 
+/* Inputs */
 input[type="text"],
-input[type="number"] {
-    width: calc(100% - 20px);
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
-    transition: border 0.3s;
+input[type="number"],
+input[type="date"],
+select {
+    width: 100%;
+    padding: 12px 14px;
+    margin: 6px 0;
+    border: 1px solid #e3e8ef;
+    border-radius: 8px;
+    font-size: 15px;
+    background: #fff;
+    transition: box-shadow .18s, border-color .18s;
 }
-
-input[type="text"]:focus,
-input[type="number"]:focus {
-    border-color: #007bff;
+input:focus, select:focus {
     outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 6px 18px rgba(0,123,255,0.08);
 }
 
+/* Buttons */
 button {
-    background-color: #007bff;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background-color: var(--blue);
     color: white;
     border: none;
-    padding: 10px 15px;
-    border-radius: 4px;
+    padding: 10px 14px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s;
+    font-weight: 500;
+    font-size: 15px;
+    margin: 10px 0;
+    transition: transform .06s ease, box-shadow .12s;
+    box-shadow: 0 6px 18px rgba(0,123,255,0.08);
 }
+button:hover { transform: translateY(-1px) }
+button:active { transform: translateY(0) }
 
-button:hover {
-    background-color: #0056b3;
+/* Variant buttons */
+#view-stocks-btn { background: var(--green); box-shadow: 0 6px 18px rgba(40,167,69,0.08) }
+#view-stocks-btn:hover { background: var(--green-dark) }
+
+.action-button {
+    padding: 8px 10px;
+    border-radius: 7px;
+    font-size: 13px;
+    margin-left:6px;
 }
+.update-button { background: linear-gradient(180deg, #e6f6ea, #d9f0df); color: #1b6f2b; border: 1px solid rgba(34,139,34,0.06) }
+.delete-button { background: linear-gradient(180deg,#ffecec,#ffdede); color: #a12727; border: 1px solid rgba(255,107,107,0.06) }
 
+/* Information areas */
 h2 {
     color: #333;
-    border-bottom: 2px solid #007bff;
-    padding-bottom: 5px;
+    font-size: 1.05rem;
+    margin: 12px 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--blue);
 }
 
-#stock-form {
-    background-color: #e7f3ff;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 20px;
-}
-
-#sell-form,#salesForm {
-    background-color: #ffe7e7;
-    padding: 15px;
-    border-radius: 5px;
-}
-
-ul {
-    list-style-type: none;
-    padding: 0;
-}
-
+/* Lists */
+ul { list-style:none; padding:0; margin: 0; display:grid; gap:10px; }
 li {
-    background-color: #f9f9f9;
-    padding: 10px;
-    margin: 5px 0;
-    border-radius: 4px;
-    border-left: 4px solid #ff6b6b;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    background: linear-gradient(90deg, #ffffff, #fbfcff);
+    padding:12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(12,20,40,0.03);
+    box-shadow: 0 4px 14px rgba(12,20,40,0.03);
+}
+li .stock-info { display:flex; flex-direction:column; gap:6px; }
+.stock-name { font-weight:600; color:#0b2340; }
+.stock-details { color: var(--muted); font-size:13px; }
+
+/* Sales list style (red accent) */
+#salesList li { border-left: 4px solid var(--red); }
+
+/* Small helpers */
+.badge {
+    font-size: 12px;
+    padding: 6px 8px;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.04);
+    color: #222;
 }
 
-#view-stocks-btn {
-    background-color: #28a745;
-    padding: 10px 15px;
-    border-radius: 4px;
-    border: none;
-    color: white;
-    cursor: pointer;
+/* Totals area */
+.totals-row{
+    display:flex;
+    gap:12px;
+    justify-content:flex-end;
+    align-items:center;
+    margin-top:12px;
+    font-weight:600;
+}
+.totals-row .value { color: #0b2340; font-size:1rem }
+
+/* Responsive */
+@media (max-width:720px){
+    .form-grid { grid-template-columns: 1fr; }
+    .controls { flex-wrap:wrap; justify-content:center }
+    li { flex-direction:column; align-items:flex-start; }
+    .stock-actions { width:100%; display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
 }
 
-#view-stocks-btn:hover {
-    background-color: #218838;
+/* Print preview styles (for popup content if used) */
+.print-preview {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #111;
 }
+.print-preview table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:12px;
+}
+.print-preview th, .print-preview td {
+    border:1px solid #e6e9ef;
+    padding:8px 10px;
+    text-align:left;
+}
+.print-preview th { background:#f7f9ff; font-weight:600; }
+
+/* Minor polish for inputs & accessibility */
+input[required] { box-shadow: inset 0 0 0 2px rgba(255,235,59,0.02) }
